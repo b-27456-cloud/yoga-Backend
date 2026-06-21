@@ -15,6 +15,7 @@ router.use(verifyToken, requireRegistered);
 
 router.get('/search', poseController.searchPoses);
 router.get('/level/:level', poseController.getPosesByLevel);
+router.post('/:id/evaluate', poseController.evaluatePose);
 router.get('/:idOrSlug', poseController.getPose);
 router.get('/', poseController.getPoses);
 

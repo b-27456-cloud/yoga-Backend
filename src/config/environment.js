@@ -40,6 +40,7 @@ const config = {
 
   // Firebase
   firebaseServiceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
+  firebaseWebApi: process.env.FIREBASE_WEB_API_KEY,
 
   // Cloudinary
   cloudinary: {

@@ -9,7 +9,6 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const morgan = require('morgan');
 const Sentry = require('@sentry/node');
-const { nodeProfilingIntegration } = require('@sentry/profiling-node');
 
 const config = require('./config/environment');
 const { apiLimiter } = require('./middleware/rateLimiter');
@@ -30,11 +29,7 @@ const app = express();
 // ==========================================
 Sentry.init({
   dsn: process.env.SENTRY_DSN || '',
-  integrations: [
-    nodeProfilingIntegration(),
-  ],
   tracesSampleRate: 1.0,
-  profilesSampleRate: 1.0,
 });
 // The request handler must be the first middleware on the app
 Sentry.setupExpressErrorHandler(app);
@@ -47,7 +42,9 @@ app.use(helmet());
 
 // Enable CORS
 app.use(cors({
-  origin: config.corsOrigin,
+  origin: function(origin, callback) {
+    callback(null, origin || true);
+  },
   credentials: true,
 }));
 
@@ -130,20 +127,24 @@ const poseRoutes = require('./modules/poses/pose.routes');
 const sessionRoutes = require('./modules/sessions/session.routes');
 const streakRoutes = require('./modules/streaks/streak.routes');
 const musicRoutes = require('./modules/music/music.routes');
+const playlistRoutes = require('./modules/music/playlist.routes');
 const achievementRoutes = require('./modules/achievements/achievement.routes');
 const analyticsRoutes = require('./modules/analytics/analytics.routes');
 const userRoutes = require('./modules/users/user.routes');
 const leaderboardRoutes = require('./modules/leaderboard/leaderboard.routes');
+const notificationRoutes = require('./modules/notifications/notification.routes');
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/poses', poseRoutes);
 app.use('/api/v1/sessions', sessionRoutes);
 app.use('/api/v1/streaks', streakRoutes);
 app.use('/api/v1/music', musicRoutes);
+app.use('/api/v1/playlists', playlistRoutes);
 app.use('/api/v1/achievements', achievementRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/leaderboard', leaderboardRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // ==========================================
 // 8. API DOCUMENTATION (SWAGGER)

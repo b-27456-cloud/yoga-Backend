@@ -79,6 +79,74 @@ const poses = [
       bent_knee: { angle: 45, tolerance: 20, landmark_indices: [23, 25, 27] }
     },
     published: true,
+  },
+  {
+    name: 'Wheel Pose',
+    slug: 'wheel-pose',
+    description: 'A deep backbend that opens the chest and stretches the entire front body.',
+    difficulty: 'intermediate',
+    level: 3,
+    duration_seconds: 40,
+    target_areas: ['chest', 'shoulders', 'spine', 'hips'],
+    prerequisites: ['Bridge Pose', 'Upward Facing Dog'],
+    instructions: [
+      'Lie on your back with knees bent and feet flat on the floor.',
+      'Place your hands on the floor beside your head, fingers pointing toward shoulders.',
+      'Press into your hands and feet to lift your hips and chest off the floor.',
+      'Straighten your arms and legs as much as possible.'
+    ],
+    benefits: ['Stretches chest and lungs', 'Strengthens arms and wrists', 'Increases energy'],
+    contraindications: ['Back injury', 'Carpal tunnel syndrome', 'High blood pressure'],
+    reference_angles: {
+      spine_extension: { angle: 120, tolerance: 30, landmark_indices: [11, 23, 25] },
+      arms_extended: { angle: 160, tolerance: 20, landmark_indices: [15, 11, 23] }
+    },
+    published: true,
+  },
+  {
+    name: 'Crow Pose',
+    slug: 'crow-pose',
+    description: 'An arm balance that strengthens the core and arms.',
+    difficulty: 'advanced',
+    level: 4,
+    duration_seconds: 30,
+    target_areas: ['arms', 'core', 'wrists'],
+    prerequisites: ['Chaturanga', 'Plank Pose'],
+    instructions: [
+      'Start in a deep squat (Malasana).',
+      'Place your hands on the floor in front of you, shoulder-width apart.',
+      'Lift your hips and place your knees on the back of your upper arms.',
+      'Lean forward and lift your feet off the floor, balancing on your hands.'
+    ],
+    benefits: ['Strengthens arms and wrists', 'Tones the abdominal core', 'Improves balance'],
+    contraindications: ['Pregnancy', 'Carpal tunnel syndrome', 'Wrist pain'],
+    reference_angles: {
+      arms_bent: { angle: 90, tolerance: 15, landmark_indices: [11, 13, 15] },
+      knees_tucked: { angle: 45, tolerance: 20, landmark_indices: [23, 25, 27] }
+    },
+    published: true,
+  },
+  {
+    name: 'Headstand',
+    slug: 'headstand',
+    description: 'The king of all yoga poses, an inversion that rests on the forearms.',
+    difficulty: 'advanced',
+    level: 5,
+    duration_seconds: 60,
+    target_areas: ['core', 'shoulders', 'neck'],
+    prerequisites: ['Dolphin Pose', 'Plank Pose'],
+    instructions: [
+      'Kneel on the floor and interlace your fingers, placing your forearms on the mat.',
+      'Place the crown of your head on the floor, cradled by your hands.',
+      'Lift your knees off the floor and walk your feet toward your elbows.',
+      'Slowly lift your legs up until they are fully extended toward the ceiling.'
+    ],
+    benefits: ['Calms the brain', 'Strengthens the core and shoulders', 'Improves digestion'],
+    contraindications: ['Neck injury', 'High blood pressure', 'Glaucoma'],
+    reference_angles: {
+      straight_body: { angle: 180, tolerance: 15, landmark_indices: [11, 23, 27] }
+    },
+    published: true,
   }
 ];
 

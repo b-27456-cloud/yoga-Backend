@@ -54,9 +54,10 @@ function calculateAngle(a, b, c) {
  *
  * @param {Array} landmarks - Array of 33 MediaPipe landmarks [{x, y, z, visibility}]
  * @param {Map|Object} referenceAngles - Map of joint names to { angle, tolerance, landmark_indices: [a,b,c] }
+ * @param {string} accessibilityProfile - The user's accessibility profile ('standard', 'elderly', 'injury_prone')
  * @returns {Object} { overall_accuracy (0-100), calculated_angles, feedback }
  */
-function evaluatePoseAccuracy(landmarks, referenceAngles) {
+function evaluatePoseAccuracy(landmarks, referenceAngles, accessibilityProfile = 'standard') {
   let totalScore = 0;
   let numJoints = 0;
   const calculatedAngles = {};
@@ -66,6 +67,14 @@ function evaluatePoseAccuracy(landmarks, referenceAngles) {
   const refs = referenceAngles instanceof Map 
     ? Object.fromEntries(referenceAngles) 
     : referenceAngles;
+
+  // Adjust tolerance multiplier based on accessibility profile
+  let toleranceMultiplier = 1.0;
+  if (accessibilityProfile === 'elderly') {
+    toleranceMultiplier = 1.2; // 20% more forgiving for reduced flexibility
+  } else if (accessibilityProfile === 'injury_prone') {
+    toleranceMultiplier = 1.15; // 15% more forgiving
+  }
 
   for (const [jointName, ref] of Object.entries(refs)) {
     const [idxA, idxB, idxC] = ref.landmark_indices;
@@ -84,14 +93,15 @@ function evaluatePoseAccuracy(landmarks, referenceAngles) {
     calculatedAngles[jointName] = actualAngle;
 
     const diff = Math.abs(actualAngle - ref.angle);
+    const adjustedTolerance = ref.tolerance * toleranceMultiplier;
 
     // Scoring logic
     let score = 0;
-    if (diff <= ref.tolerance) {
+    if (diff <= adjustedTolerance) {
       score = 100; // Perfect within tolerance
-    } else if (diff <= ref.tolerance * 2) {
+    } else if (diff <= adjustedTolerance * 2) {
       // Partial credit if slightly outside tolerance
-      score = 100 - ((diff - ref.tolerance) / ref.tolerance) * 50;
+      score = 100 - ((diff - adjustedTolerance) / adjustedTolerance) * 50;
     } else {
       // Outside 2x tolerance is 0 for this joint
       score = 0;

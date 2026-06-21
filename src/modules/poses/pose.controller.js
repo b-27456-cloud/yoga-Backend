@@ -130,6 +130,43 @@ async function deletePose(req, res, next) {
   }
 }
 
+const { evaluatePoseAccuracy } = require('../sessions/angle.calculator');
+
+/**
+ * Evaluate a single frame of landmarks against a pose
+ * POST /api/v1/poses/:id/evaluate
+ */
+async function evaluatePose(req, res, next) {
+  try {
+    const { landmarks } = req.body;
+    const pose = await poseService.getPoseByIdOrSlug(req.params.id);
+    
+    if (!pose || !pose.reference_angles) {
+      return res.status(400).json({ status: 'error', message: 'Pose reference data unavailable' });
+    }
+
+    // Determine accessibility profile if user is authenticated
+    let accessibilityProfile = 'standard';
+    if (req.user && req.user.user_id) {
+      const User = require('../auth/auth.model');
+      const user = await User.findById(req.user.user_id).select('accessibility.profile');
+      if (user && user.accessibility && user.accessibility.profile) {
+        accessibilityProfile = user.accessibility.profile;
+      }
+    }
+
+    const { overall_accuracy, feedback } = evaluatePoseAccuracy(landmarks, pose.reference_angles, accessibilityProfile);
+
+    res.status(200).json({
+      status: 'success',
+      accuracy: overall_accuracy,
+      feedback
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getPoses,
   searchPoses,
@@ -138,4 +175,5 @@ module.exports = {
   createPose,
   updatePose,
   deletePose,
+  evaluatePose,
 };

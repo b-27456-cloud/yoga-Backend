@@ -54,9 +54,10 @@ async function evaluateBadges(user_id) {
     const catalog = await getCatalog();
 
     // 3. Fetch user's currently earned achievements
-    const earned = await UserAchievement.find({ user_id }).select('achievement_id').lean();
+    const earned = await UserAchievement.find({ user_id }).select('achievement_id points_earned').lean();
     const earnedSet = new Set(earned.map(e => e.achievement_id.toString()));
-
+    
+    let totalPoints = earned.reduce((sum, e) => sum + (e.points_earned || 0), 0);
     const newlyEarned = [];
 
     // 4. Evaluate each unearned achievement against current stats
@@ -71,18 +72,12 @@ async function evaluateBadges(user_id) {
           conditionMet = streak.current_streak >= conditionValue;
           break;
         case 'total_sessions':
-          // total_days_practiced is a close proxy, or we can use a true session count if needed.
-          // For now, assume total_days_practiced = total_sessions for MVP, or we can query Session count.
-          // Let's use total_days_practiced for simplicity in this MVP version.
           conditionMet = streak.total_days_practiced >= conditionValue;
           break;
         case 'total_minutes':
           conditionMet = streak.total_minutes_practiced >= conditionValue;
           break;
         case 'average_accuracy':
-          // This requires querying all sessions or getting an aggregated value.
-          // Since it's a bit heavy, we might skip or use a rolling average stored somewhere.
-          // Let's assume we won't evaluate accuracy badges here unless strictly needed.
           break;
       }
 
@@ -93,6 +88,7 @@ async function evaluateBadges(user_id) {
           achievement_id: badge._id,
           points_earned: badge.points_reward,
         });
+        totalPoints += badge.points_reward;
         logger.info(`User ${user_id} earned badge: ${badge.slug}`);
         
         // Phase 9: Trigger FCM Notification
@@ -104,7 +100,20 @@ async function evaluateBadges(user_id) {
     if (newlyEarned.length > 0) {
       // Bulk insert new achievements
       await UserAchievement.insertMany(newlyEarned);
-      // In production, we would trigger a notification here via WebSocket or Push
+    }
+    
+    // 5. Update user level based on total points (100 points = 1 level)
+    const newLevel = Math.floor(totalPoints / 100) + 1;
+    const User = require('../auth/auth.model');
+    const user = await User.findById(user_id);
+    
+    if (user && user.stats.current_level < newLevel) {
+      logger.info(`User ${user_id} leveled up to ${newLevel}!`);
+      user.stats.current_level = newLevel;
+      await user.save();
+      
+      const { sendNotification } = require('../../services/fcm.service');
+      sendNotification(user_id, 'Level Up! ⭐', `Congratulations! You reached Level ${newLevel}.`, 'system', { new_level: newLevel }).catch(() => {});
     }
 
   } catch (error) {

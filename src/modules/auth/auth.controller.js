@@ -4,29 +4,45 @@
  */
 
 const authService = require('./auth.service');
+const { admin } = require('../../config/firebase');
+const { config } = require('../../config/environment');
 const { AppError } = require('../../middleware/errorHandler');
 
 /**
  * Register user
  * POST /api/v1/auth/register
- * Requires valid Firebase ID token in Authorization header.
- * req.user is populated by verifyToken middleware.
+ * Accepts raw email and password. Uses Firebase Admin SDK to create the user,
+ * then creates the MongoDB profile.
  */
 async function register(req, res, next) {
   try {
-    const { firebase_uid, email, email_verified } = req.user;
-    
-    // We expect Firebase to handle email verification, but we can still register them
-    // and rely on client to enforce verification before allowing access to certain features.
+    const { email, password, first_name, last_name, phone, age, accessibility_profile } = req.body;
 
+    // 1. Create user in Firebase Auth
+    let userRecord;
+    try {
+      userRecord = await admin.auth().createUser({
+        email,
+        password,
+      });
+    } catch (firebaseErr) {
+      if (firebaseErr.code === 'auth/email-already-exists') {
+        throw new AppError('Email is already in use by another account.', 409);
+      }
+      throw new AppError(`Firebase registration failed: ${firebaseErr.message}`, 400);
+    }
+
+    const firebase_uid = userRecord.uid;
+
+    // 2. Create user in MongoDB
     const userData = {
       firebase_uid,
       email,
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      phone: req.body.phone,
-      age: req.body.age,
-      accessibility_profile: req.body.accessibility_profile,
+      first_name,
+      last_name,
+      phone,
+      age,
+      accessibility_profile,
     };
 
     const user = await authService.registerUser(userData);
@@ -43,20 +59,53 @@ async function register(req, res, next) {
 /**
  * Login user
  * POST /api/v1/auth/login
- * Requires valid Firebase ID token in Authorization header.
+ * Uses Firebase Identity Toolkit REST API to authenticate via email/password.
  */
 async function login(req, res, next) {
   try {
-    const { firebase_uid } = req.user;
+    const { email, password } = req.body;
 
+    if (!config.firebaseWebApi) {
+      throw new AppError('FIREBASE_WEB_API_KEY is not configured on the server.', 500);
+    }
+
+    // 1. Authenticate with Firebase REST API
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${config.firebaseWebApi}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          returnSecureToken: true,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errMsg = data.error?.message || 'Authentication failed';
+      if (errMsg === 'EMAIL_NOT_FOUND' || errMsg === 'INVALID_PASSWORD' || errMsg === 'INVALID_LOGIN_CREDENTIALS') {
+        throw new AppError('Invalid email or password.', 401);
+      }
+      throw new AppError(`Firebase login failed: ${errMsg}`, 401);
+    }
+
+    const { idToken, localId: firebase_uid } = data;
+
+    // 2. Fetch the MongoDB profile
     const user = await authService.findByFirebaseUid(firebase_uid);
 
     if (!user) {
       throw new AppError('User not registered. Please register first.', 404);
     }
 
+    // 3. Return token and user profile
     res.status(200).json({
       status: 'success',
+      token: idToken,
       data: user,
     });
   } catch (err) {
@@ -67,15 +116,10 @@ async function login(req, res, next) {
 /**
  * Logout user
  * POST /api/v1/auth/logout
- * Client handles the actual Firebase signOut(). This is just to log the event
- * or clear any server-side state if needed in the future.
+ * Client handles discarding the token.
  */
 async function logout(req, res, next) {
   try {
-    // In Firebase auth, the token is technically still valid until it expires (~1 hr),
-    // but the client has thrown it away. We could blacklist it, but typically
-    // it's not strictly necessary for MVP unless immediate revocation is required.
-    // For now, we just return success.
     res.status(200).json({
       status: 'success',
       message: 'Logged out successfully',

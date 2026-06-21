@@ -5,12 +5,15 @@
 
 const express = require('express');
 const userController = require('./user.controller');
+const playlistController = require('../music/playlist.controller');
 const { verifyToken, requireRegistered } = require('../../middleware/auth');
 
 const router = express.Router();
 
 router.use(verifyToken, requireRegistered);
 router.use('/:user_id', userController.checkOwnership);
+
+router.get('/:user_id/playlists', playlistController.getUserPlaylists);
 
 router.get('/:user_id/profile', userController.getProfile);
 router.put('/:user_id/profile', userController.updateProfile);

@@ -14,18 +14,16 @@ const router = express.Router();
 // Apply stricter rate limiting to all auth routes
 router.use(authLimiter);
 
-// 1. Register: requires Firebase token, validates body
+// 1. Register: validates body
 router.post(
   '/register',
-  verifyToken,
   validate(registerSchema),
   authController.register
 );
 
-// 2. Login: requires Firebase token
+// 2. Login: takes email and password in body
 router.post(
   '/login',
-  verifyToken,
   authController.login
 );
 

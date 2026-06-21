@@ -50,7 +50,7 @@ function getSignedUrl(publicId, options = {}, expiresInSeconds = 3600) {
 
   return cloudinary.url(publicId, {
     sign_url: true,
-    type: 'authenticated',
+    type: 'upload', // Changed from 'authenticated' to support default uploads
     expires_at: Math.floor(Date.now() / 1000) + expiresInSeconds,
     ...options,
   });
