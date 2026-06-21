@@ -42,10 +42,7 @@ app.use(helmet());
 
 // Enable CORS
 app.use(cors({
-  origin: function(origin, callback) {
-    callback(null, origin || true);
-  },
-  credentials: true,
+  origin: '*'
 }));
 
 // ==========================================

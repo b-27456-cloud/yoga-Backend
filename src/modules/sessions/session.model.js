@@ -3,6 +3,79 @@
  * Tracks a user's practice session, storing accuracy and landmarks over time.
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Session:
+ *       type: object
+ *       properties:
+ *         session_id:
+ *           type: string
+ *           description: The auto-generated id of the session
+ *         user_id:
+ *           type: string
+ *         pose_id:
+ *           type: string
+ *         music_id:
+ *           type: string
+ *         duration_seconds:
+ *           type: number
+ *         start_time:
+ *           type: string
+ *           format: date-time
+ *         end_time:
+ *           type: string
+ *           format: date-time
+ *         accuracy_average:
+ *           type: number
+ *         accuracy_timeline:
+ *           type: array
+ *           items:
+ *             type: number
+ *         landmarks_data:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/FrameData'
+ *         completed:
+ *           type: boolean
+ *         notes:
+ *           type: string
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *     FrameData:
+ *       type: object
+ *       properties:
+ *         timestamp:
+ *           type: string
+ *           format: date-time
+ *         landmarks:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Landmark'
+ *         angles:
+ *           type: object
+ *           additionalProperties:
+ *             type: number
+ *         accuracy:
+ *           type: number
+ *     Landmark:
+ *       type: object
+ *       properties:
+ *         x:
+ *           type: number
+ *         y:
+ *           type: number
+ *         z:
+ *           type: number
+ *         visibility:
+ *           type: number
+ */
+
 const mongoose = require('mongoose');
 
 const landmarkSchema = new mongoose.Schema({

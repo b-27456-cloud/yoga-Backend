@@ -3,6 +3,67 @@
  * Stores metadata and Cloudinary references for background audio tracks.
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Music:
+ *       type: object
+ *       properties:
+ *         music_id:
+ *           type: string
+ *         title:
+ *           type: string
+ *         artist:
+ *           type: string
+ *         genre:
+ *           type: string
+ *         mood:
+ *           type: array
+ *           items:
+ *             type: string
+ *         duration_seconds:
+ *           type: number
+ *         bpm:
+ *           type: number
+ *         audio_file:
+ *           type: object
+ *           properties:
+ *             url:
+ *               type: string
+ *             size_mb:
+ *               type: number
+ *         yoga_suitability:
+ *           type: object
+ *           properties:
+ *             suitable_for_levels:
+ *               type: array
+ *               items:
+ *                 type: string
+ *             best_poses:
+ *               type: array
+ *               items:
+ *                 type: string
+ *             energy_level:
+ *               type: string
+ *               enum: [low, medium, high]
+ *         metadata:
+ *           type: object
+ *           properties:
+ *             play_count:
+ *               type: number
+ *             rating:
+ *               type: number
+ *         available:
+ *           type: boolean
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ */
+
 const mongoose = require('mongoose');
 
 const musicSchema = new mongoose.Schema(

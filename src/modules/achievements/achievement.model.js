@@ -3,6 +3,47 @@
  * Stores the definitions for badges and achievements.
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Achievement:
+ *       type: object
+ *       properties:
+ *         achievement_id:
+ *           type: string
+ *         slug:
+ *           type: string
+ *         name:
+ *           type: string
+ *         description:
+ *           type: string
+ *         icon_url:
+ *           type: string
+ *         condition:
+ *           type: object
+ *           properties:
+ *             type:
+ *               type: string
+ *               enum: [streak_days, total_sessions, average_accuracy, total_minutes]
+ *             value:
+ *               type: number
+ *         points_reward:
+ *           type: number
+ *         category:
+ *           type: string
+ *           enum: [consistency, mastery, exploration]
+ *         rarity:
+ *           type: string
+ *           enum: [common, rare, epic, legendary]
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ */
+
 const mongoose = require('mongoose');
 
 const achievementSchema = new mongoose.Schema(

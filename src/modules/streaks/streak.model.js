@@ -3,6 +3,41 @@
  * Tracks user consistency and progress over time.
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Streak:
+ *       type: object
+ *       properties:
+ *         streak_id:
+ *           type: string
+ *         user_id:
+ *           type: string
+ *         current_streak:
+ *           type: number
+ *         longest_streak:
+ *           type: number
+ *         last_session_date:
+ *           type: string
+ *           format: date-time
+ *         streak_start_date:
+ *           type: string
+ *           format: date-time
+ *         total_days_practiced:
+ *           type: number
+ *         total_minutes_practiced:
+ *           type: number
+ *         available_freezes:
+ *           type: number
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ */
+
 const mongoose = require('mongoose');
 
 const streakSchema = new mongoose.Schema(

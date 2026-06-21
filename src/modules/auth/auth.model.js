@@ -5,6 +5,102 @@
  * User is identified by `firebase_uid` from Firebase Auth.
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         user_id:
+ *           type: string
+ *           description: The auto-generated id of the user
+ *         firebase_uid:
+ *           type: string
+ *           description: Firebase Authentication UID
+ *         email:
+ *           type: string
+ *           description: User email address
+ *         first_name:
+ *           type: string
+ *           description: User's first name
+ *         last_name:
+ *           type: string
+ *           description: User's last name
+ *         phone:
+ *           type: string
+ *           description: User's phone number
+ *         age:
+ *           type: number
+ *           description: User's age
+ *         profile_photo_url:
+ *           type: string
+ *           description: URL to the user's profile photo
+ *         subscription:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               enum: [free, premium]
+ *             expires_at:
+ *               type: string
+ *               format: date-time
+ *         accessibility:
+ *           type: object
+ *           properties:
+ *             profile:
+ *               type: string
+ *               enum: [standard, elderly, injury_prone]
+ *             font_size:
+ *               type: string
+ *               enum: [small, medium, large, xlarge]
+ *             theme:
+ *               type: string
+ *               enum: [light, dark, high_contrast]
+ *             voice_guidance:
+ *               type: boolean
+ *             haptic_feedback:
+ *               type: boolean
+ *         settings:
+ *           type: object
+ *           properties:
+ *             language:
+ *               type: string
+ *               enum: [en, ur, hi]
+ *             notifications:
+ *               type: object
+ *               properties:
+ *                 daily_reminder:
+ *                   type: boolean
+ *                 streak_alerts:
+ *                   type: boolean
+ *                 achievement_alerts:
+ *                   type: boolean
+ *         stats:
+ *           type: object
+ *           properties:
+ *             total_sessions:
+ *               type: number
+ *             total_minutes:
+ *               type: number
+ *             current_level:
+ *               type: number
+ *         privacy:
+ *           type: object
+ *           properties:
+ *             show_on_leaderboard:
+ *               type: boolean
+ *         role:
+ *           type: string
+ *           enum: [user, admin]
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ */
+
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(

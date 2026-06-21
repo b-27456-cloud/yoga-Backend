@@ -3,6 +3,36 @@
  * Tracks in-app notifications and their read status.
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Notification:
+ *       type: object
+ *       properties:
+ *         notification_id:
+ *           type: string
+ *         user_id:
+ *           type: string
+ *         title:
+ *           type: string
+ *         body:
+ *           type: string
+ *         type:
+ *           type: string
+ *           enum: [streak, badge, reminder, system]
+ *         metadata:
+ *           type: object
+ *         read:
+ *           type: boolean
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ */
+
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema(

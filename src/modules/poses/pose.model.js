@@ -3,6 +3,118 @@
  * Stores yoga poses with metadata, reference angles for AI comparison, and video links.
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Pose:
+ *       type: object
+ *       properties:
+ *         pose_id:
+ *           type: string
+ *           description: The auto-generated id of the pose
+ *         name:
+ *           type: string
+ *           description: Name of the pose
+ *         slug:
+ *           type: string
+ *           description: URL-friendly slug
+ *         description:
+ *           type: string
+ *           description: Detailed description of the pose
+ *         difficulty:
+ *           type: string
+ *           enum: [beginner, intermediate, advanced]
+ *         level:
+ *           type: number
+ *           description: Progression level (1-5)
+ *         duration_seconds:
+ *           type: number
+ *           description: Recommended duration in seconds
+ *         target_areas:
+ *           type: array
+ *           items:
+ *             type: string
+ *         prerequisites:
+ *           type: array
+ *           items:
+ *             type: string
+ *         instructions:
+ *           type: array
+ *           items:
+ *             type: string
+ *         benefits:
+ *           type: array
+ *           items:
+ *             type: string
+ *         contraindications:
+ *           type: array
+ *           items:
+ *             type: string
+ *         reference_angles:
+ *           type: object
+ *           additionalProperties:
+ *             type: object
+ *             properties:
+ *               angle:
+ *                 type: number
+ *               tolerance:
+ *                 type: number
+ *               landmark_indices:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *         modifications:
+ *           type: object
+ *           properties:
+ *             beginner:
+ *               $ref: '#/components/schemas/PoseModification'
+ *             elderly:
+ *               $ref: '#/components/schemas/PoseModification'
+ *             injury_prone:
+ *               $ref: '#/components/schemas/PoseModification'
+ *         video:
+ *           type: object
+ *           properties:
+ *             full_url:
+ *               type: string
+ *             duration:
+ *               type: number
+ *             narration:
+ *               type: object
+ *               properties:
+ *                 english:
+ *                   type: string
+ *                 urdu:
+ *                   type: string
+ *                 hindi:
+ *                   type: string
+ *             subtitles:
+ *               type: object
+ *               properties:
+ *                 english:
+ *                   type: string
+ *                 urdu:
+ *                   type: string
+ *                 hindi:
+ *                   type: string
+ *         published:
+ *           type: boolean
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *     PoseModification:
+ *       type: object
+ *       properties:
+ *         description:
+ *           type: string
+ *         imageUrl:
+ *           type: string
+ */
+
 const mongoose = require('mongoose');
 
 const referenceAngleSchema = new mongoose.Schema({
