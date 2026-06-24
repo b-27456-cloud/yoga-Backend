@@ -22,16 +22,23 @@ try {
  * Start a new yoga session.
  */
 async function startSession({ user_id, pose_id, music_id }) {
-  // Verify pose exists
-  const pose = await Pose.findById(pose_id).lean();
+  // Verify pose exists by ID or Slug
+  let query = { published: true };
+  if (pose_id.match(/^[0-9a-fA-F]{24}$/)) {
+    query._id = pose_id;
+  } else {
+    query.slug = pose_id;
+  }
+  
+  const pose = await Pose.findOne(query).lean();
   if (!pose) {
     throw new AppError('Pose not found', 404);
   }
 
-  // Create the session
+  // Create the session (ensure we store the actual ObjectId, not the slug)
   const session = await Session.create({
     user_id,
-    pose_id,
+    pose_id: pose._id,
     music_id,
     start_time: new Date(),
   });
@@ -212,14 +219,14 @@ async function processPostSessionTasks(session) {
   // Phase 5: Streak updating
   const { updateUserStreak } = require('../streaks/streak.service');
   await updateUserStreak(session);
-  
+
   // Phase 7: Analytics aggregation
   // require('../analytics/analytics.service').aggregateSession(session);
 
   // Phase 8: Badge evaluation
   const { evaluateBadges } = require('../achievements/achievement.service');
   await evaluateBadges(session.user_id);
-  
+
   logger.debug('Post-session background tasks completed', { session_id: session._id });
 }
 
