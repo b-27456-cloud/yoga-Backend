@@ -31,6 +31,12 @@
  *         duration_seconds:
  *           type: number
  *           description: Recommended duration in seconds
+ *         expected_calories:
+ *           type: number
+ *           description: Estimated calories burned
+ *         image_url:
+ *           type: string
+ *           description: URL to the primary image for this pose
  *         target_areas:
  *           type: array
  *           items:
@@ -160,6 +166,15 @@ const poseSchema = new mongoose.Schema(
     duration_seconds: {
       type: Number,
       default: 60,
+    },
+    expected_calories: {
+      type: Number,
+      description: 'Estimated calories burned during this pose',
+      default: 5, // typical baseline
+    },
+    image_url: {
+      type: String,
+      description: 'URL to the primary image for this pose',
     },
     target_areas: [String],
     prerequisites: [String],

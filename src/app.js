@@ -23,6 +23,9 @@ const swaggerSpec = require('./config/swagger');
 
 const app = express();
 
+// Trust the reverse proxy (e.g., Render, Nginx, Heroku) so rate limiter uses correct IPs
+app.set('trust proxy', 1);
+
 // ==========================================
 // 1. ERROR TRACKING (SENTRY)
 // Initialize Sentry as early as possible
