@@ -23,6 +23,9 @@ const swaggerSpec = require('./config/swagger');
 
 const app = express();
 
+// Disable ETags to prevent 304 Not Modified responses (so frontend always gets full JSON and 200 OK)
+app.set('etag', false);
+
 // Trust the reverse proxy (e.g., Render, Nginx, Heroku) so rate limiter uses correct IPs
 app.set('trust proxy', 1);
 
