@@ -22,6 +22,11 @@ try {
  * Start a new yoga session.
  */
 async function startSession({ user_id, pose_id, music_id }) {
+  // Frontend might send 'none' or empty string if no music is selected
+  if (music_id === 'none' || music_id === '') {
+    music_id = null;
+  }
+
   // Verify pose exists by ID or Slug
   let query = { published: true };
   if (pose_id.match(/^[0-9a-fA-F]{24}$/)) {
