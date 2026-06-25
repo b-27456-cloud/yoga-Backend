@@ -12,7 +12,9 @@ const sessionService = require('./session.service');
  */
 async function startSession(req, res, next) {
   try {
+    console.log(`[Session Controller] -> startSession invoked by user: ${req.user.user_id}`);
     const { pose_id, music_id } = req.body;
+    console.log(`[Session Controller] -> startSession payload: pose_id=${pose_id}, music_id=${music_id}`);
     
     const result = await sessionService.startSession({
       user_id: req.user.user_id,
@@ -20,11 +22,13 @@ async function startSession(req, res, next) {
       music_id,
     });
     
+    console.log(`[Session Controller] -> startSession SUCCESS. Session ID: ${result.session.session_id}`);
     res.status(201).json({
       status: 'success',
       data: result,
     });
   } catch (err) {
+    console.error(`[Session Controller] -> startSession ERROR:`, err.message, err.stack);
     next(err);
   }
 }
@@ -36,19 +40,28 @@ async function startSession(req, res, next) {
  */
 async function logFrame(req, res, next) {
   try {
+    console.log(`[Session Controller] -> logFrame invoked for session: ${req.params.id}`);
     const { landmarks } = req.body;
     
+    if (!landmarks) {
+      console.error(`[Session Controller] -> logFrame ERROR: landmarks array is missing from request body!`);
+    } else {
+      console.log(`[Session Controller] -> logFrame received ${landmarks.length} landmarks.`);
+    }
+
     const result = await sessionService.logFrame({
       session_id: req.params.id,
       user_id: req.user.user_id,
       landmarks,
     });
     
+    console.log(`[Session Controller] -> logFrame SUCCESS for session: ${req.params.id}, Accuracy: ${result.accuracy}`);
     res.status(200).json({
       status: 'success',
       data: result,
     });
   } catch (err) {
+    console.error(`[Session Controller] -> logFrame ERROR for session ${req.params.id}:`, err.message, err.stack);
     next(err);
   }
 }
@@ -60,6 +73,7 @@ async function logFrame(req, res, next) {
  */
 async function endSession(req, res, next) {
   try {
+    console.log(`[Session Controller] -> endSession invoked for session: ${req.params.id}`);
     const { notes } = req.body;
     
     const session = await sessionService.endSession({
@@ -68,11 +82,13 @@ async function endSession(req, res, next) {
       notes,
     });
     
+    console.log(`[Session Controller] -> endSession SUCCESS for session: ${req.params.id}`);
     res.status(200).json({
       status: 'success',
       data: session,
     });
   } catch (err) {
+    console.error(`[Session Controller] -> endSession ERROR for session ${req.params.id}:`, err.message, err.stack);
     next(err);
   }
 }
