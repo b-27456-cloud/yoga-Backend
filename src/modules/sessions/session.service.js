@@ -140,7 +140,8 @@ async function endSession({ session_id, user_id, notes }) {
   }
 
   if (session.completed) {
-    throw new AppError('Session already completed', 400);
+    logger.info('Session already completed, returning existing session to make endpoint idempotent', { session_id });
+    return session;
   }
 
   const endTime = new Date();

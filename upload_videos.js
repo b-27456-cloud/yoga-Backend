@@ -1,3 +1,13 @@
+/**
+ * upload_videos.js
+ *
+ * Auto-detects all video AND image files in /assets, matches them to poses
+ * in the database by filename, uploads to Cloudinary, and stores the URL
+ * on the pose document using a direct updateOne (bypasses save() validation).
+ *
+ * Usage: node upload_videos.js
+ */
+
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const path = require('path');
@@ -5,78 +15,176 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Pose = require('./src/modules/poses/pose.model');
 
-// Configure Cloudinary
-cloudinary.config({ 
-  cloud_name: 'dxj0mosok', 
-  api_key: '997996518616349', 
-  api_secret: 'fjsLovm0gJS7U9-jjZJyH7Bkfz8' 
-});
-
-const videoToPoseMapping = {
-  'IMG_6110.MOV': 'Mountain Pose',
-  'IMG_6111.MOV': 'Child’s Pose',
-  'IMG_6112.MOV': 'Cat-Cow Pose',
-  'IMG_6113.MOV': 'Cobra Pose',
-  'IMG_6114.MOV': 'Bridge Pose',
-  'IMG_6115.MOV': 'Tree Pose',
-  'IMG_6116.MOV': 'Seated Forward Bend',
-  'IMG_6117.MOV': 'Easy Pose',
-  'IMG_6118.MOV': 'Warrior I',
-  'IMG_6119.MOV': 'Warrior II',
-  'IMG_6120.MOV': 'Triangle Pose'
-};
-
-// Load env vars for MONGODB_URI
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const VIDEO_EXTENSIONS = ['.mov', '.mp4', '.avi', '.mkv', '.webm'];
+const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp'];
+const ASSETS_DIR = path.join(__dirname, 'assets');
+
+/**
+ * Normalise a string for loose matching:
+ * lowercase, strip punctuation, collapse whitespace.
+ */
+function normalise(str) {
+  return str
+    .toLowerCase()
+    .replace(/[''`]/g, '')    // apostrophes
+    .replace(/[-_]/g, ' ')    // hyphens / underscores → space
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Alias map: normalised filename → normalised DB pose name.
+ * Add entries here whenever a filename is too far from the DB name.
+ */
+const ALIASES = {
+  'downward dog':       'downward facing dog',
+  'seated forward bent':'seated forward bend',
+  'warrior pose':       'warrior',  // maps to renamed 'Warrior' pose
+};
+
 async function uploadAndAttach() {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("Connected to MongoDB");
+  await mongoose.connect(process.env.MONGODB_URI);
+  console.log('✅ Connected to MongoDB\n');
 
-    const assetsDir = path.join(__dirname, 'assets');
-    const files = Object.keys(videoToPoseMapping); // We'll just iterate over mapping
+  // Load all poses from DB once, keyed by normalised name
+  const allPoses = await Pose.find({});
+  const poseMap = new Map(allPoses.map(p => [normalise(p.name), p]));
 
-    for (const file of files) {
-      const poseName = videoToPoseMapping[file];
-      const filePath = path.join(assetsDir, file);
+  // Scan assets/ and split files into videos and images
+  const allFiles = fs.readdirSync(ASSETS_DIR);
+  const videoFiles = allFiles.filter(f => VIDEO_EXTENSIONS.includes(path.extname(f).toLowerCase()));
+  const imageFiles = allFiles.filter(f => IMAGE_EXTENSIONS.includes(path.extname(f).toLowerCase()));
 
-      if (!fs.existsSync(filePath)) {
-        console.log(`File not found: ${filePath}`);
+  // Skip the old numbered images (image2.png, image3.png …)
+  const namedImages = imageFiles.filter(f => !/^image\d+\./i.test(f));
+
+  console.log(`Found ${videoFiles.length} video(s) and ${namedImages.length} named image(s)\n`);
+
+  const results = { success: [], skipped: [], failed: [] };
+
+  // ── Helper: resolve pose from filename ──────────────────────────────────
+  function resolvepose(file) {
+    const ext      = path.extname(file);
+    const baseName = path.basename(file, ext);
+    const normFile = normalise(baseName);
+    const lookupKey = ALIASES[normFile] ?? normFile;
+    return { lookupKey, pose: poseMap.get(lookupKey) };
+  }
+
+  // ── 1. Upload VIDEOS ─────────────────────────────────────────────────────
+  if (videoFiles.length) {
+    console.log('═══════════════════ VIDEOS ═══════════════════════');
+    for (const file of videoFiles) {
+      const { lookupKey, pose } = resolvepose(file);
+
+      if (!pose) {
+        console.log(`⚠️  [SKIP] "${file}" — no DB match for "${lookupKey}"`);
+        results.skipped.push({ file, reason: `No DB match for "${lookupKey}"` });
         continue;
       }
 
-      console.log(`Uploading ${file} for pose: ${poseName}...`);
-      
-      const uploadResult = await cloudinary.uploader.upload(filePath, {
-        resource_type: "video",
-        folder: "yogaflow_poses_videos"
-      });
+      const filePath = path.join(ASSETS_DIR, file);
+      console.log(`⬆️  Uploading "${file}" → Pose: "${pose.name}"...`);
 
-      console.log(`Uploaded! URL: ${uploadResult.secure_url}`);
+      try {
+        const upload = await cloudinary.uploader.upload(filePath, {
+          resource_type: 'video',
+          folder: 'yogaflow_poses_videos',
+          public_id: `video_${pose.slug}`,
+          overwrite: true,
+        });
 
-      // Find the pose and update its video.full_url
-      const pose = await Pose.findOne({ name: poseName });
-      if (pose) {
-        pose.video = pose.video || {};
-        pose.video.full_url = uploadResult.secure_url;
-        await pose.save();
-        console.log(`✅ Successfully attached video to pose: ${poseName}\n`);
-      } else {
-        console.log(`❌ Pose '${poseName}' not found in DB!\n`);
+        // Use updateOne + $set to avoid triggering full save() validation
+        await Pose.updateOne(
+          { _id: pose._id },
+          {
+            $set: {
+              'video.full_url': upload.secure_url,
+              'video.duration': upload.duration ? Math.round(upload.duration) : undefined,
+            },
+          }
+        );
+
+        console.log(`   ✅ Attached: ${upload.secure_url}\n`);
+        results.success.push({ file, pose: pose.name, url: upload.secure_url });
+
+      } catch (err) {
+        console.error(`   ❌ Failed for "${file}": ${err.message}\n`);
+        results.failed.push({ file, error: err.message });
       }
     }
-
-    console.log("All videos uploaded and attached successfully!");
-    
-    // Also we want to update the poses.seed.js file so future seeds don't overwrite this data
-    // That's complex to do via AST, so we will just mention it's saved in the live DB for now.
-
-    process.exit(0);
-  } catch (error) {
-    console.error("Error during process:", error);
-    process.exit(1);
   }
+
+  // ── 2. Upload IMAGES ─────────────────────────────────────────────────────
+  if (namedImages.length) {
+    console.log('\n═══════════════════ IMAGES ═══════════════════════');
+    for (const file of namedImages) {
+      const { lookupKey, pose } = resolvepose(file);
+
+      if (!pose) {
+        console.log(`⚠️  [SKIP] "${file}" — no DB match for "${lookupKey}"`);
+        results.skipped.push({ file, reason: `No DB match for "${lookupKey}"` });
+        continue;
+      }
+
+      const filePath = path.join(ASSETS_DIR, file);
+      console.log(`⬆️  Uploading "${file}" → Pose: "${pose.name}"...`);
+
+      try {
+        const upload = await cloudinary.uploader.upload(filePath, {
+          resource_type: 'image',
+          folder: 'yogaflow_poses_images',
+          public_id: `image_${pose.slug}`,
+          overwrite: true,
+        });
+
+        await Pose.updateOne(
+          { _id: pose._id },
+          { $set: { image_url: upload.secure_url } }
+        );
+
+        console.log(`   ✅ Attached: ${upload.secure_url}\n`);
+        results.success.push({ file, pose: pose.name, url: upload.secure_url });
+
+      } catch (err) {
+        console.error(`   ❌ Failed for "${file}": ${err.message}\n`);
+        results.failed.push({ file, error: err.message });
+      }
+    }
+  }
+
+  // ── Summary ───────────────────────────────────────────────────────────────
+  console.log('\n══════════════════════════════════════');
+  console.log('           UPLOAD SUMMARY');
+  console.log('══════════════════════════════════════');
+  console.log(`✅ Success  : ${results.success.length}`);
+  console.log(`⚠️  Skipped  : ${results.skipped.length}`);
+  console.log(`❌ Failed   : ${results.failed.length}`);
+
+  if (results.skipped.length) {
+    console.log('\nSkipped (no matching pose in DB or alias):');
+    results.skipped.forEach(s => console.log(`  • ${s.file} — ${s.reason}`));
+  }
+  if (results.failed.length) {
+    console.log('\nFailed uploads:');
+    results.failed.forEach(f => console.log(`  • ${f.file} — ${f.error}`));
+  }
+
+  await mongoose.disconnect();
+  console.log('\nDone. MongoDB disconnected.');
+  process.exit(0);
 }
 
-uploadAndAttach();
+uploadAndAttach().catch(err => {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});

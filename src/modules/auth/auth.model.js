@@ -214,6 +214,7 @@ const userSchema = new mongoose.Schema(
     toJSON: {
       transform(doc, ret) {
         ret.user_id = ret._id;
+        ret.id = ret._id; // Provide id for frontend compatibility
         delete ret._id;
         delete ret.__v;
         delete ret.deleted;
