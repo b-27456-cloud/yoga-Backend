@@ -42,8 +42,22 @@ async function updateSettings(user_id, settingsData) {
   const user = await User.findById(user_id);
   if (!user) throw new AppError('User not found', 404);
 
-  // Merge settings
-  user.settings = { ...user.settings, ...settingsData };
+  // Deep-merge top-level settings fields.
+  // A shallow spread would overwrite nested objects (e.g. notifications)
+  // with undefined if the client omits them, causing Mongoose validation errors.
+  if (settingsData.language !== undefined) {
+    user.settings.language = settingsData.language;
+  }
+
+  if (settingsData.notifications !== undefined && typeof settingsData.notifications === 'object') {
+    // Merge individual notification flags — never replace the whole sub-document
+    const notif = settingsData.notifications;
+    if (notif.daily_reminder !== undefined)     user.settings.notifications.daily_reminder     = notif.daily_reminder;
+    if (notif.streak_alerts !== undefined)      user.settings.notifications.streak_alerts      = notif.streak_alerts;
+    if (notif.achievement_alerts !== undefined) user.settings.notifications.achievement_alerts = notif.achievement_alerts;
+  }
+
+  user.markModified('settings');
   await user.save();
 
   return user.settings;
