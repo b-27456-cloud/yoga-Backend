@@ -6,6 +6,7 @@
 const Pose = require('./pose.model');
 const { cache, getOrSet, invalidateByPrefix } = require('../../config/cache');
 const { AppError } = require('../../middleware/errorHandler');
+const Session = require('../sessions/session.model');
 const logger = require('../../middleware/logging');
 
 const CACHE_PREFIX = 'poses_';
@@ -145,10 +146,56 @@ async function deletePose(poseId) {
   logger.info('Pose deleted', { pose_id: poseId });
 }
 
+/**
+ * Check if a user has access to a pose based on difficulty progression.
+ * Beginner poses are always accessible.
+ * Intermediate and advanced poses require ALL beginner poses to be completed at least once.
+ *
+ * @param {string|ObjectId} user_id - The authenticated user's MongoDB ID
+ * @param {object} pose            - The pose document (must have .difficulty and .name)
+ * @throws {AppError} 403 with a list of remaining beginner poses if access is denied
+ */
+async function checkProgressionAccess(user_id, pose) {
+  // Beginner poses are always accessible
+  if (pose.difficulty === 'beginner') return;
+
+  // Fetch all published beginner poses (id + name only)
+  const beginnerPoses = await Pose.find(
+    { difficulty: 'beginner', published: true },
+    { _id: 1, name: 1 }
+  ).lean();
+
+  if (beginnerPoses.length === 0) return; // no beginner poses defined → allow access
+
+  // Fetch the distinct pose_ids the user has completed
+  const completedPoseIds = await Session.distinct('pose_id', {
+    user_id,
+    completed: true,
+  });
+
+  // Convert to a Set of strings for O(1) lookups
+  const completedSet = new Set(completedPoseIds.map((id) => id.toString()));
+
+  // Find which beginner poses are NOT yet completed
+  const remaining = beginnerPoses.filter(
+    (p) => !completedSet.has(p._id.toString())
+  );
+
+  if (remaining.length > 0) {
+    const remainingNames = remaining.map((p) => p.name).join(', ');
+    throw new AppError(
+      `You must complete all beginner poses before accessing intermediate poses. ` +
+      `Remaining beginner poses: ${remainingNames}.`,
+      403
+    );
+  }
+}
+
 module.exports = {
   getPoses,
   getPoseByIdOrSlug,
   createPose,
   updatePose,
   deletePose,
+  checkProgressionAccess,
 };

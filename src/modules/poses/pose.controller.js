@@ -4,6 +4,7 @@
  */
 
 const poseService = require('./pose.service');
+const { checkProgressionAccess } = require('./pose.service');
 
 /**
  * Get paginated list of poses
@@ -50,6 +51,12 @@ async function searchPoses(req, res, next) {
 async function getPose(req, res, next) {
   try {
     const pose = await poseService.getPoseByIdOrSlug(req.params.idOrSlug);
+
+    // Enforce progression: intermediate/advanced poses are locked until all
+    // beginner poses are completed. Admins bypass this restriction.
+    if (req.user && req.user.user_id && req.user.role !== 'admin') {
+      await checkProgressionAccess(req.user.user_id, pose);
+    }
     
     res.status(200).json({
       status: 'success',
@@ -143,6 +150,11 @@ async function evaluatePose(req, res, next) {
     
     if (!pose || !pose.reference_angles) {
       return res.status(400).json({ status: 'error', message: 'Pose reference data unavailable' });
+    }
+
+    // Enforce progression gate (same rule as getPose)
+    if (req.user && req.user.user_id && req.user.role !== 'admin') {
+      await checkProgressionAccess(req.user.user_id, pose);
     }
 
     // Determine accessibility profile if user is authenticated

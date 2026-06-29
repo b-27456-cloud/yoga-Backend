@@ -40,6 +40,11 @@ async function startSession({ user_id, pose_id, music_id }) {
     throw new AppError('Pose not found', 404);
   }
 
+  // Enforce progression gate: intermediate/advanced poses require all beginner poses completed.
+  // Loaded dynamically to avoid circular dependency between session.service ↔ pose.service.
+  const { checkProgressionAccess } = require('../poses/pose.service');
+  await checkProgressionAccess(user_id, pose);
+
   // Create the session (ensure we store the actual ObjectId, not the slug)
   const session = await Session.create({
     user_id,
