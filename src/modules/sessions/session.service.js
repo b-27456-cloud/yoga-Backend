@@ -95,10 +95,16 @@ async function logFrame({ session_id, user_id, landmarks }) {
     throw new AppError('Pose reference data unavailable', 400);
   }
 
+  // Fetch the user's accessibility profile to adjust scoring tolerances
+  const User = require('../auth/auth.model');
+  const user = await User.findById(user_id).select('accessibility.profile').lean();
+  const accessibilityProfile = user?.accessibility?.profile || 'standard';
+
   // Calculate accuracy
   const { overall_accuracy, calculated_angles, feedback } = evaluatePoseAccuracy(
     landmarks,
-    pose.reference_angles
+    pose.reference_angles,
+    accessibilityProfile
   );
 
   // Push frame data to session

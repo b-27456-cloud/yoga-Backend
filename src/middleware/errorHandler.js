@@ -45,10 +45,9 @@ function errorHandler(err, req, res, _next) {
     });
   }
 
-  // Build the response
   const response = {
     status: 'error',
-    message: isOperational ? err.message : 'Internal server error',
+    message: err.message || 'Internal server error',
     errors: [],
   };
 

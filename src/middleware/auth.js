@@ -48,15 +48,15 @@ async function verifyToken(req, res, next) {
 
     next();
   } catch (err) {
-    // Handle specific Firebase auth errors
+    // Handle specific Firebase auth errors with user-friendly language
     if (err.code === 'auth/id-token-expired') {
-      return next(new AppError('Token expired. Please refresh your Firebase token.', 401));
+      return next(new AppError('Your session has expired. Please log in again.', 401));
     }
     if (err.code === 'auth/id-token-revoked') {
-      return next(new AppError('Token revoked. Please sign in again.', 401));
+      return next(new AppError('Your access has been revoked. Please log in again.', 401));
     }
     if (err.code === 'auth/argument-error' || err.code === 'auth/invalid-id-token') {
-      return next(new AppError('Invalid authentication token.', 401));
+      return next(new AppError('Your session is invalid. Please log in again.', 401));
     }
 
     // Pass through AppErrors (like 401/503 from above)
@@ -65,7 +65,7 @@ async function verifyToken(req, res, next) {
     }
 
     logger.error('Auth middleware error:', { error: err.message });
-    return next(new AppError('Authentication failed.', 401));
+    return next(new AppError('Authentication failed. Please log in again.', 401));
   }
 }
 

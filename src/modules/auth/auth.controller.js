@@ -27,9 +27,14 @@ async function register(req, res, next) {
       });
     } catch (firebaseErr) {
       if (firebaseErr.code === 'auth/email-already-exists') {
-        throw new AppError('Email is already in use by another account.', 409);
+        throw new AppError('This email is already registered.', 409);
+      } else if (firebaseErr.code === 'auth/invalid-email') {
+        throw new AppError('Please provide a valid email address.', 400);
+      } else if (firebaseErr.code === 'auth/weak-password') {
+        throw new AppError('Your password is too weak. Please use at least 6 characters.', 400);
       }
-      throw new AppError(`Firebase registration failed: ${firebaseErr.message}`, 400);
+      // Provide a clean generic error for other issues rather than "Firebase registration failed"
+      throw new AppError(firebaseErr.message || 'Registration failed. Please try again later.', 400);
     }
 
     const firebase_uid = userRecord.uid;
@@ -89,8 +94,12 @@ async function login(req, res, next) {
       const errMsg = data.error?.message || 'Authentication failed';
       if (errMsg === 'EMAIL_NOT_FOUND' || errMsg === 'INVALID_PASSWORD' || errMsg === 'INVALID_LOGIN_CREDENTIALS') {
         throw new AppError('Invalid email or password.', 401);
+      } else if (errMsg === 'USER_DISABLED') {
+        throw new AppError('This account has been disabled. Please contact support.', 403);
+      } else if (errMsg === 'TOO_MANY_ATTEMPTS_TRY_LATER') {
+        throw new AppError('Too many failed login attempts. Please try again later.', 429);
       }
-      throw new AppError(`Firebase login failed: ${errMsg}`, 401);
+      throw new AppError('Login failed. Please try again.', 401);
     }
 
     const { idToken, localId: firebase_uid } = data;
