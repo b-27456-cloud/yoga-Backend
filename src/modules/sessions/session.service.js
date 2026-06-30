@@ -34,7 +34,7 @@ async function startSession({ user_id, pose_id, music_id }) {
   } else {
     query.slug = pose_id;
   }
-  
+
   const pose = await Pose.findOne(query).lean();
   if (!pose) {
     throw new AppError('Pose not found', 404);
@@ -95,16 +95,10 @@ async function logFrame({ session_id, user_id, landmarks }) {
     throw new AppError('Pose reference data unavailable', 400);
   }
 
-  // Fetch the user's accessibility profile to adjust scoring tolerances
-  const User = require('../auth/auth.model');
-  const user = await User.findById(user_id).select('accessibility.profile').lean();
-  const accessibilityProfile = user?.accessibility?.profile || 'standard';
-
   // Calculate accuracy
   const { overall_accuracy, calculated_angles, feedback } = evaluatePoseAccuracy(
     landmarks,
-    pose.reference_angles,
-    accessibilityProfile
+    pose.reference_angles
   );
 
   // Push frame data to session
@@ -125,7 +119,7 @@ async function logFrame({ session_id, user_id, landmarks }) {
       $push: {
         landmarks_data: {
           $each: [frameData],
-          $slice: -300, // keep last 300
+          $slice: -300,
         },
         accuracy_timeline: {
           $each: [overall_accuracy],
