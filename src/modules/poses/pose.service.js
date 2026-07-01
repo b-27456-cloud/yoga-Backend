@@ -16,7 +16,7 @@ const DETAIL_TTL = 7200; // 2 hours
 /**
  * Get paginated list of poses with optional filtering and search.
  */
-async function getPoses({ page = 1, limit = 10, difficulty, level, target_area, search }) {
+async function getPoses({ page = 1, limit = 20, difficulty, level, target_area, search }) {
   const query = {
     published: true,
     // Only return poses that have both a cover image and a video attached

@@ -13,7 +13,7 @@ cloudinary.config({
 });
 
 const imageToPoseMapping = {
-  'image2.png': 'Child’s Pose',
+  'image2.png': "Child's Pose",
   'image3.png': 'Cat-Cow Pose',
   'image4.png': 'Cobra Pose',
   'image5.png': 'Bridge Pose',
@@ -21,12 +21,12 @@ const imageToPoseMapping = {
   'image7.png': 'Seated Forward Bend',
   'image8.png': 'Easy Pose',
   'image9.png': 'Warrior I',
-  'image10.png': 'Warrior II',
+  'image10.png': 'Warrior',
   'image11.png': 'Triangle Pose'
 };
 
 const caloriesMapping = {
-  'Child’s Pose': 3,
+  "Child's Pose": 3,
   'Cat-Cow Pose': 4,
   'Cobra Pose': 5,
   'Bridge Pose': 6,

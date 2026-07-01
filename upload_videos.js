@@ -24,7 +24,7 @@ cloudinary.config({
 });
 
 const VIDEO_EXTENSIONS = ['.mov', '.mp4', '.avi', '.mkv', '.webm'];
-const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp'];
+const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.jfif'];
 const ASSETS_DIR = path.join(__dirname, 'assets');
 
 /**
@@ -47,8 +47,10 @@ function normalise(str) {
  */
 const ALIASES = {
   'downward dog':       'downward facing dog',
+  'downward facing dog pose': 'downward facing dog',
   'seated forward bent':'seated forward bend',
   'warrior pose':       'warrior',  // maps to renamed 'Warrior' pose
+  'child pose':         'childs pose',
 };
 
 async function uploadAndAttach() {

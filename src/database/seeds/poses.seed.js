@@ -184,29 +184,7 @@ const poses = [
   },
 
   // ── INTERMEDIATE POSES ─────────────────────────────────────────────────────
-  {
-    name: 'Warrior I',
-    slug: 'warrior-i',
-    description: 'Lunge forward with arms raised overhead, building strength and focus.',
-    difficulty: 'intermediate',
-    level: 2,
-    duration_seconds: 60,
-    target_areas: ['legs', 'arms', 'shoulders', 'chest'],
-    prerequisites: ['Mountain Pose'],
-    instructions: [
-      'Start in Mountain Pose and step your left foot back about 3-4 feet.',
-      'Turn your left foot out 45 degrees and bend your right knee to 90 degrees.',
-      'Square your hips to face forward as much as possible.',
-      'Inhale and raise both arms overhead, palms facing each other.'
-    ],
-    benefits: ['Builds leg strength', 'Improves stamina'],
-    contraindications: ['High blood pressure'],
-    reference_angles: {
-      front_knee: { angle: 90, tolerance: 15, landmark_indices: [23, 25, 27] },
-      arms_overhead: { angle: 180, tolerance: 15, landmark_indices: [23, 11, 15] }
-    },
-    published: true,
-  },
+
   {
     name: 'Warrior',
     slug: 'warrior',
@@ -322,6 +300,28 @@ const poses = [
     },
     published: true,
   },
+  {
+    name: 'Tree Pose',
+    slug: 'tree-pose',
+    description: 'A balancing pose that improves focus and stability.',
+    difficulty: 'beginner',
+    level: 1,
+    duration_seconds: 45,
+    target_areas: ['legs', 'core', 'ankles'],
+    prerequisites: ['Mountain Pose'],
+    instructions: [
+      'Stand tall and shift your weight onto your left leg.',
+      'Place your right foot on your inner left thigh or calf (avoid the knee).',
+      'Bring your hands together at your chest.',
+      'Find a focal point to help you balance.'
+    ],
+    benefits: ['Improves balance', 'Strengthens ankles and calves', 'Enhances focus'],
+    contraindications: ['Low blood pressure', 'Insomnia', 'Headache'],
+    reference_angles: {
+      bent_knee: { angle: 45, tolerance: 20, landmark_indices: [23, 25, 27] }
+    },
+    published: true,
+  },
 ];
 
 
@@ -336,11 +336,13 @@ async function seedPoses() {
       // Separate out the video field so we never accidentally wipe a real URL
       const { video, ...coreFields } = pose;
 
+      const videoToSet = video || null;
+
       await Pose.findOneAndUpdate(
         { slug: pose.slug },
         {
           $set: coreFields,          // always update metadata (name, angles, etc.)
-          $setOnInsert: { video },   // only set video when CREATING a new document
+          $setOnInsert: { video: videoToSet },   // only set video when CREATING a new document
         },
         { upsert: true, new: true, runValidators: true }
       );
